@@ -10,7 +10,8 @@ const ratesBoard = new RatesBoard();
 const moneyManager = new MoneyManager();
 const favoritesWidget = new FavoritesWidget();
 
-let interval = setInterval(receiveingCurrentExchangeRate, 60000);
+// задаем интервал времени через 1 минуту (60000 мс) через вызов функции текущих курса валют
+let interval = setInterval(receiveingCurrentExchangeRate(), 60000);
 
 logoutButton.action = () => {
     // выполнение запроса на деавторизацию
@@ -20,12 +21,11 @@ logoutButton.action = () => {
             clearInterval(interval); // очистка интервала
             location.reload();
             logoutButton.setMessage(true, 'Выход из кабинета прошло успешно');
-            // console.log('Выходим из личного кабинета');
         } else {
             logoutButton.setMessage(false, 'Ошибка выхода из кабинета');
         }
     });
-};
+}
 
 // *получение информации о пользователе* //
 // выполнение запроса на получение инфо о пользователе
@@ -33,9 +33,9 @@ ApiConnector.current(response => {
     // проверка: если запрос успешный - показ данных профиля
     if (response.success) {
         ProfileWidget.showProfile(response.data);
-        this.setMessage(true, 'Успешно обновлены даннные');
+        moneyManager.setMessage(true, 'Успешно обновлены даннные');
     } else {
-        this.setMessage(false, 'Ошибка обновления данных');
+        moneyManager.setMessage(false, 'Ошибка обновления данных');
     }
 });
 
@@ -48,22 +48,21 @@ function receiveingCurrentExchangeRate() {
         if (response.success) {
             ratesBoard.clearTable();
             ratesBoard.fillTable(response.data);
-            this.setMessage(true, 'Очистка и обновление данных прошла успешно');
+            moneyManager.setMessage(true, 'Очистка и обновление данных прошла успешно');
         } else {
-            this.setMessage(false, 'Ошибка очистки и обновления данных');
+            moneyManager.setMessage(false, 'Ошибка очистки и обновления данных');
         }
     });
     return;
-};
+}
 // вызов функции для получение текущих курсов валют
 receiveingCurrentExchangeRate();
-// задаем интервал времени через 1 минуту (60000 мс) через вызов функции текущих курса валют
-setInterval(receiveingCurrentExchangeRate, 60000);
+
 
 // *операции с деньгами* //
 
 // balance
-moneyManager.addMoneyCallback = ((data) => {
+moneyManager.addMoneyCallback = (data) => {
     // выполнение запроса на пополнение баланса
     ApiConnector.addMoney(data, (response) => {
         // проверка: если запрос успешный - успешное пополнение, иначе ошибка
@@ -75,9 +74,9 @@ moneyManager.addMoneyCallback = ((data) => {
             moneyManager.setMessage(false, 'Ошибка пополнения баланса');
         }
     });
-});
+}
 // conversion
-moneyManager.conversionMoneyCallback = ((data) => {
+moneyManager.conversionMoneyCallback = (data) => {
     ApiConnector.convertMoney(data, (response) => {
         // проверка: если запрос успешный - успешное конвертирование, иначе ошибка
         if (response.success) {
@@ -88,9 +87,9 @@ moneyManager.conversionMoneyCallback = ((data) => {
             moneyManager.setMessage(false, 'Ошибка конвертирования');
         }
     });
-});
+}
 // translation
-moneyManager.sendMoneyCallback = ((data) => {
+moneyManager.sendMoneyCallback = (data) => {
     ApiConnector.transferMoney(data, (response) => {
         // проверка: если запрос успешный - успешный перевод, иначе ошибка
         if (response.success) {
@@ -101,7 +100,7 @@ moneyManager.sendMoneyCallback = ((data) => {
             moneyManager.setMessage(false, 'Ошибка перевода');
         }
     });
-});
+};
 
 // *работа с избранным* //
 // функция - очистка списка избранного, вставка полученных новых данных, добавление в списке для перевода денег
@@ -110,20 +109,20 @@ function clearFillUpdate(response) {
     favoritesWidget.fillTable(response.data);
     moneyManager.updateUsersList(response.data);
 };
+
 // выполнение запроса на получение списка избранного
-ApiConnector.getFavorites = ((response) => {
+ApiConnector.getFavorites(response => {
     // проверка: если запрос успешный - очистка списка избранного, вставка полученных новых данных, добавление в списке для перевода денег
-    console.log(response.data);
     if (response.success) {
         clearFillUpdate(response);
-        this.setMessage(true, 'Список избранных получен успешно');
+        favoritesWidget.setMessage(true, 'Список избранных получен успешно');
     } else {
-        this.setMessage(false, 'Ошибка вывода списка избранных');
+        favoritesWidget.setMessage(false, 'Ошибка вывода списка избранных');
     }
 });
 
 // добавление пользователя в список избранных
-favoritesWidget.addUserCallback = ((data) => {
+favoritesWidget.addUserCallback = (data) => {
     // выполнение запроса на добавление новых пользователей
     ApiConnector.addUserToFavorites(data, (response) => {
         // проверка: если запрос успешный - очистка списка избранного, вставка полученных новых данных, добавление в списке для перевода денег
@@ -134,11 +133,11 @@ favoritesWidget.addUserCallback = ((data) => {
             favoritesWidget.setMessage(false, 'Ошибка добавления пользователя')
         }
     });
-});
+};
 // удаление пользователя из списка избранного
-favoritesWidget.removeUserCallback = ((data) => {
+favoritesWidget.removeUserCallback = (data) => {
     // выполнение запроса на удаление пользователей
-    ApiConnector.removeUserFromFavorites(data, (response) => {
+    ApiConnector.removeUserFromFavorites(data, response => {
         // проверка: если запрос успешный - очистка списка избранного, вставка полученных новых данных, добавление в списке для перевода денег
         if (response.success) {
             clearFillUpdate(response);
@@ -147,5 +146,5 @@ favoritesWidget.removeUserCallback = ((data) => {
             favoritesWidget.setMessage(false, 'Ошибка удаления пользователя')
         }
     });
-});
+};
 
