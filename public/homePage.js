@@ -10,19 +10,17 @@ const ratesBoard = new RatesBoard();
 const moneyManager = new MoneyManager();
 const favoritesWidget = new FavoritesWidget();
 
-// задаем интервал времени через 1 минуту (60000 мс) через вызов функции текущих курса валют
-setInterval(receiveingCurrentExchangeRate, 60000);
+let interval = setInterval(receiveingCurrentExchangeRate, 60000);
 
 logoutButton.action = () => {
     // выполнение запроса на деавторизацию
-    ApiConnector.logout(response => {
-        // очистка интервала
-        clearInterval(interval);
+    ApiConnector.logout((response) => {
         // проверка: если запрос успешный - обновление страницы(переход на страницу ввхода/регистрации)
         if (response.success) {
+            clearInterval(interval); // очистка интервала
             location.reload();
             logoutButton.setMessage(true, 'Выход из кабинета прошло успешно');
-            console.log('Выходим из личного кабинета')
+            // console.log('Выходим из личного кабинета');
         } else {
             logoutButton.setMessage(false, 'Ошибка выхода из кабинета');
         }
@@ -59,6 +57,8 @@ function receiveingCurrentExchangeRate() {
 };
 // вызов функции для получение текущих курсов валют
 receiveingCurrentExchangeRate();
+// задаем интервал времени через 1 минуту (60000 мс) через вызов функции текущих курса валют
+setInterval(receiveingCurrentExchangeRate, 60000);
 
 // *операции с деньгами* //
 
@@ -105,7 +105,7 @@ moneyManager.sendMoneyCallback = ((data) => {
 
 // *работа с избранным* //
 // функция - очистка списка избранного, вставка полученных новых данных, добавление в списке для перевода денег
-function clearFillUpdate() {
+function clearFillUpdate(response) {
     favoritesWidget.clearTable();
     favoritesWidget.fillTable(response.data);
     moneyManager.updateUsersList(response.data);
@@ -113,8 +113,9 @@ function clearFillUpdate() {
 // выполнение запроса на получение списка избранного
 ApiConnector.getFavorites = ((response) => {
     // проверка: если запрос успешный - очистка списка избранного, вставка полученных новых данных, добавление в списке для перевода денег
+    console.log(response.data);
     if (response.success) {
-        clearFillUpdate();
+        clearFillUpdate(response);
         this.setMessage(true, 'Список избранных получен успешно');
     } else {
         this.setMessage(false, 'Ошибка вывода списка избранных');
@@ -127,7 +128,7 @@ favoritesWidget.addUserCallback = ((data) => {
     ApiConnector.addUserToFavorites(data, (response) => {
         // проверка: если запрос успешный - очистка списка избранного, вставка полученных новых данных, добавление в списке для перевода денег
         if (response.success) {
-            clearFillUpdate();
+            clearFillUpdate(response);
             favoritesWidget.setMessage(true, 'Пользователь успешно добавлен')
         } else {
             favoritesWidget.setMessage(false, 'Ошибка добавления пользователя')
@@ -140,7 +141,7 @@ favoritesWidget.removeUserCallback = ((data) => {
     ApiConnector.removeUserFromFavorites(data, (response) => {
         // проверка: если запрос успешный - очистка списка избранного, вставка полученных новых данных, добавление в списке для перевода денег
         if (response.success) {
-            clearFillUpdate();
+            clearFillUpdate(response);
             favoritesWidget.setMessage(true, 'Пользователь успешно удален')
         } else {
             favoritesWidget.setMessage(false, 'Ошибка удаления пользователя')
